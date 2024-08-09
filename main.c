@@ -13,6 +13,7 @@ int blockX = WIDTH / 2 - 2, blockY = 0;
 int score = 0;
 int level = 1;
 int speed = 500;
+int currentColor;
 
 int blocks[7][4][4] = {
     {{1, 1, 1, 1}, {0, 0, 0, 0}, {0, 0, 0, 0}, {0, 0, 0, 0}}, // I字型
@@ -23,6 +24,13 @@ int blocks[7][4][4] = {
     {{0, 1, 1, 0}, {1, 1, 0, 0}, {0, 0, 0, 0}, {0, 0, 0, 0}}, // Z字型
     {{1, 1, 0, 0}, {0, 1, 1, 0}, {0, 0, 0, 0}, {0, 0, 0, 0}}  // 逆Z字型
 };
+
+int colors[7] = {9, 10, 11, 12, 13, 14, 15}; // 色の配列
+
+void setColor(int color) {
+    HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
+    SetConsoleTextAttribute(hConsole, color);
+}
 
 void drawField() {
     system("cls");
@@ -41,6 +49,7 @@ void drawField() {
 
 void drawBlock() {
     HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
+    setColor(currentColor);
     for (int y = 0; y < 4; y++) {
         for (int x = 0; x < 4; x++) {
             if (block[y][x] == 1) {
@@ -50,6 +59,7 @@ void drawBlock() {
             }
         }
     }
+    setColor(7); // デフォルトの色に戻す
 }
 
 void clearBlock() {
@@ -86,7 +96,6 @@ void dropBlock() {
         blockY++;
         drawBlock();
     } else {
-        // ブロックをフィールドに固定
         for (int y = 0; y < 4; y++) {
             for (int x = 0; x < 4; x++) {
                 if (block[y][x] == 1) {
@@ -94,7 +103,6 @@ void dropBlock() {
                 }
             }
         }
-        // ラインの消去
         for (int y = 0; y < HEIGHT; y++) {
             int fullLine = 1;
             for (int x = 0; x < WIDTH; x++) {
@@ -115,24 +123,41 @@ void dropBlock() {
                 }
             }
         }
-        // レベルアップ
         if (score >= level * 500) {
             level++;
             speed -= 50;
         }
-        // 新しいブロックを生成
         blockY = 0;
         blockX = WIDTH / 2 - 2;
         int newBlock = rand() % 7;
+        currentColor = colors[newBlock];
         for (int y = 0; y < 4; y++) {
             for (int x = 0; x < 4; x++) {
                 block[y][x] = blocks[newBlock][y][x];
             }
         }
-        // ゲームオーバー判定
         if (!canMove(0, 0)) {
             printf("Game Over! Final Score: %d\n", score);
-            exit(0);
+            printf("Press 'r' to restart or any other key to exit.\n");
+            char key = _getch();
+            if (key == 'r') {
+                // ゲームを再スタート
+                memset(field, 0, sizeof(field));
+                score = 0;
+                level = 1;
+                speed = 500;
+                blockY = 0;
+                blockX = WIDTH / 2 - 2;
+                newBlock = rand() % 7;
+                currentColor = colors[newBlock];
+                for (int y = 0; y < 4; y++) {
+                    for (int x = 0; x < 4; x++) {
+                        block[y][x] = blocks[newBlock][y][x];
+                    }
+                }
+            } else {
+                exit(0);
+            }
         }
     }
 }
@@ -177,6 +202,7 @@ void handleInput() {
 int main() {
     srand(time(NULL));
     int newBlock = rand() % 7;
+    currentColor = colors[newBlock];
     for (int y = 0; y < 4; y++) {
         for (int x = 0; x < 4; x++) {
             block[y][x] = blocks[newBlock][y][x];
@@ -187,7 +213,7 @@ int main() {
         drawField();
         drawBlock();
         handleInput();
-        Sleep(speed / 10); // 入力処理の頻度を増やす
+        Sleep(speed / 10);
         dropBlock();
     }
 
